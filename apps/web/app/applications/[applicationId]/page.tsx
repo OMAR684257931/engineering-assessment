@@ -1,4 +1,9 @@
-import { fetchApplication, formatStatus } from "../../../src/api";
+import { notFound } from "next/navigation";
+import {
+  ApplicationNotVisibleError,
+  fetchApplication,
+  formatStatus,
+} from "../../../src/api";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +28,16 @@ export default async function ApplicationPage({
   params: Promise<{ applicationId: string }>;
 }) {
   const { applicationId } = await params;
-  const application = await fetchApplication(applicationId);
+
+  let application;
+  try {
+    application = await fetchApplication(applicationId);
+  } catch (error) {
+    // Renders the same "not found" page whether the application is missing or
+    // simply not this customer's, matching the API's non-disclosure behaviour.
+    if (error instanceof ApplicationNotVisibleError) notFound();
+    throw error;
+  }
 
   return (
     <main className="page-shell">
@@ -76,13 +90,19 @@ export default async function ApplicationPage({
               </tr>
             </thead>
             <tbody>
-              {application.history.map((entry) => (
-                <tr key={entry.id}>
-                  <td>{formatStatus(entry.status)}</td>
-                  <td>{entry.reason ?? "—"}</td>
-                  <td>{formatDate(entry.occurredAt)}</td>
+              {application.history.length === 0 ? (
+                <tr>
+                  <td colSpan={3}>No status changes recorded yet.</td>
                 </tr>
-              ))}
+              ) : (
+                application.history.map((entry) => (
+                  <tr key={entry.id}>
+                    <td>{formatStatus(entry.status)}</td>
+                    <td>{entry.reason ?? "—"}</td>
+                    <td>{formatDate(entry.occurredAt)}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

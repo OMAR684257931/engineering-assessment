@@ -45,6 +45,7 @@ model ApplicationStatusHistory {
   occurredAt     DateTime
   recordedAt     DateTime        @default(now())
 
+  @@unique([applicationId, sourceEventId])
   @@index([applicationId, occurredAt])
   @@index([sourceEventId])
 }
@@ -59,9 +60,14 @@ model NotificationJob {
   attemptCount    Int             @default(0)
   nextAttemptAt   DateTime?
   processedAt     DateTime?
+  deadLetteredAt  DateTime?
+  claimedAt       DateTime?
+  claimedBy       String?
   lastError       String?
   createdAt       DateTime        @default(now())
 
+  @@unique([applicationId, sourceEventId, type])
   @@index([processedAt, nextAttemptAt])
   @@index([sourceEventId])
+  @@index([deadLetteredAt])
 }

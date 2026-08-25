@@ -12,3 +12,7 @@ packages/database/prisma/*.db-wal
 packages/database/generated/
 .env
 .env.local
+
+# IDE
+.idea/
+.vscode/

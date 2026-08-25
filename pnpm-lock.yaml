@@ -103,6 +103,9 @@ importers:
 
   apps/worker:
     dependencies:
+      '@assessment/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@assessment/database':
         specifier: workspace:*
         version: link:../../packages/database

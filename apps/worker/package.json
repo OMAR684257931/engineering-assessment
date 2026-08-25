@@ -9,6 +9,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@assessment/contracts": "workspace:*",
     "@assessment/database": "workspace:*"
   },
   "devDependencies": {

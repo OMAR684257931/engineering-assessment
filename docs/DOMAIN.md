@@ -32,9 +32,9 @@ Returns `{ "status": "ok" }`.
 
 ### `GET /v1/applications/:applicationId`
 
-Requires the `x-customer-id` request header. Returns the application, customer contact details, and status history ordered newest first.
+Requires the `x-customer-id` request header; the value is trimmed, so a blank or whitespace-only header is treated as missing. Returns the application, customer contact details, and status history ordered newest first.
 
-Expected failures include a missing identity and an application that does not exist or is not visible to that identity. The API should not disclose whether an inaccessible application exists.
+A missing identity returns `401`. An application that does not exist, or exists but belongs to another customer, returns an identical `404` — the response does not disclose whether an inaccessible application exists.
 
 ### `POST /v1/applications/:applicationId/status-events`
 
@@ -49,7 +49,26 @@ Accepts JSON of this shape:
 }
 ```
 
-The adapter should distinguish malformed input, an unknown application, a duplicate delivery, a stale or invalid state change, and an accepted state change in a way its caller can operate safely.
+The adapter distinguishes each outcome so its caller can operate safely:
+
+| Outcome | Status | Body |
+| --- | --- | --- |
+| Malformed input | `400` | `{ "error": "invalid status event", "details": … }` |
+| Unknown application | `404` | `{ "error": "application not found" }` |
+| Duplicate delivery | `200` | `{ "outcome": "duplicate", "application": … }` |
+| Stale (older than the last accepted event) | `409` | `{ "outcome": "stale", "lastEventOccurredAt": … }` |
+| Not a legal status change | `409` | `{ "outcome": "invalid_transition", "from": …, "to": … }` |
+| Accepted | `202` | `{ "outcome": "accepted", "application": … }` |
+
+`2xx` means the event is settled and should not be re-sent; `409` means it was understood and
+rejected, so retrying will not change the result.
+
+`eventId` is the idempotency key. A re-send under the same `eventId` is reported as a duplicate and
+has no further effect, even if its payload differs from the original.
+
+This endpoint is an unauthenticated integration adapter, so `application` here carries only
+`{ id, status }` — never customer contact details. Unexpected failures return
+`{ "error": "internal server error", "requestId": … }` without internal detail.
 
 ## Notifications
 

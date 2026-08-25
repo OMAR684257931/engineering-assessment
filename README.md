@@ -61,7 +61,8 @@ pnpm dev
 
 The home page opens the seeded application `app_home_001` as customer `cus_amina_001`.
 
-Send a partner event from another terminal:
+Send a partner event from another terminal (a second run of the same command reports
+`200 {"outcome":"duplicate"}` rather than applying it twice):
 
 ```sh
 curl -i http://localhost:3001/v1/applications/app_home_001/status-events \
