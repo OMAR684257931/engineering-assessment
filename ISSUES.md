@@ -176,6 +176,14 @@ risk was, so I kept this proportionate.
 ### P3-12 — `vitest.config.ts` excluded `packages/**`
 *Fixed (one line).* Any test added under `packages/` would never have run.
 
+## Found later, by reviewing my own finished work
+
+The issues above came from the first pass over the inherited code. The ones below came from
+reviewing my *own* implementation adversarially once it was green — so they are numbered in the
+order I found them, not in priority order. Severity is still marked on each. I kept them in
+discovery order deliberately: where a defect came from is part of the evidence, and P1-13 in
+particular is a defect I introduced into my own fix and then caught.
+
 ### P1-13 — The unauthenticated partner endpoint returned customer PII
 *Fixed.* Found by my own hostile review after the first implementation pass. The POST response
 echoed the full `ApplicationView` — name, email, and phone — in every outcome branch, to a caller
@@ -190,10 +198,6 @@ The API now logs the error server-side with a request id and returns
 `{ "error": "internal server error", "requestId": … }`. Fastify's own 4xx responses are passed
 through unchanged, so malformed input is still reported usefully — there is a test for that, because
 a generic handler that swallows 400s would be a worse bug than the one it fixed.
-
-### P3-15 — Whitespace-only `x-customer-id` was treated as an identity
-*Fixed.* `"   "` passed the `length === 0` check and reached the ownership query. Not exploitable
-(it matched no owner, so it 404'd) but the header is now trimmed before validation.
 
 ### P2-17 — A duplicate `eventId` carrying a *different* payload is ignored
 *Investigated; behaviour deliberately kept, now documented.*
@@ -218,6 +222,10 @@ in `DESIGN.md` records every delivery including rejected and duplicate ones, so 
 visible in the audit trail and can be alerted on, without the ingestion path having to adjudicate it
 in real time.
 
+### P3-15 — Whitespace-only `x-customer-id` was treated as an identity
+*Fixed.* `"   "` passed the `length === 0` check and reached the ownership query. Not exploitable
+(it matched no owner, so it 404'd) but the header is now trimmed before validation.
+
 ### P3-16 — A delivered job kept a stale `nextAttemptAt`
 *Fixed.* Harmless, since `processedAt` gates the poll query, but it left contradictory bookkeeping
 on the row. Cleared on success.
@@ -240,11 +248,6 @@ them.
 | Prisma 6 → 7 upgrade | Unrelated churn with real regression risk inside a timebox. |
 
 ## Scope note
-
-Three of the issues above (P1-13, P1-14, P2-17) were found by reviewing my own finished work
-adversarially rather than during the first pass. I have left them in the list, and left the
-description of my mistaken first attempt at P2-8 intact, because how a defect was found is part of
-the evidence.
 
 The brief asks for one vertical slice, and I treated authorization and event integrity as one:
 both concern whether the customer-visible history can be trusted. History is only trustworthy if it
